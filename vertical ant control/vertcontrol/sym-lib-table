@@ -1,0 +1,4 @@
+(sym_lib_table
+  (lib (name murata)(type Legacy)(uri "C:/Users/hjf/Desktop/Kicad Projects/vertical ant control/vertcontrol/capacitor3pin.lib")(options "")(descr ""))
+  (lib (name vertcontrol-rescue)(type Legacy)(uri ${KIPRJMOD}/vertcontrol-rescue.lib)(options "")(descr ""))
+)
