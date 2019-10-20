@@ -15,7 +15,7 @@
 #define MIN_US 50
 #define MAX_US 1500
 #else
-#define MIN_US 35
+#define MIN_US 100
 #define MAX_US 1000
 #endif
 
@@ -113,13 +113,9 @@ void loop() {
 
     if (!await_adc) {
 #ifdef DEBUG
-      TIMSK2 = (TIMSK2 & B11111110) | 0x01;
-      TCCR2B = (TCCR2B & B11111000) | 0x01;
+
       ADMUX = (_BV(REFS1) | _BV(REFS0) | _BV(MUX3));
 #else
-      TIMSK1 = (TIMSK1 & B11111110) | 0x01;
-      TCCR1B = (TCCR1B & B11111000) | 0x01;
-      TCNT1H = 0xff;
       ADMUX = 0b10100010;//(_BV(REFS1) | _BV(REFS0) | _BV(MUX3));
 #endif
 
@@ -240,12 +236,21 @@ void initializeRadio() {
   radio.begin();
   radio.enableAckPayload();                     // Allow optional ack payloads
   radio.enableDynamicPayloads();                // Ack payloads are dynamic payloads
-  radio.setPALevel(RF24_PA_LOW);
+  radio.setPALevel(RF24_PA_MAX);
 
-  radio.openWritingPipe(addresses[ROLE_ANTENNA]);
-  radio.openReadingPipe(1, addresses[ROLE_CONTROLLER]);
+  radio.openWritingPipe(addresses[ROLE_CONTROLLER]);
+  radio.openReadingPipe(1, addresses[ROLE_ANTENNA]);
   radio.startListening();
   radio.writeAckPayload(1, &response, sizeof(struct antenna_response));
+
+#ifdef DEBUG
+  TIMSK2 = (TIMSK2 & B11111110) | 0x01;
+  TCCR2B = (TCCR2B & B11111000) | 0x01;
+#else
+  TIMSK1 = (TIMSK1 & B11111110) | 0x01;
+  TCCR1B = (TCCR1B & B11111000) | 0x01;
+  TCNT1H = 0xff;
+#endif
 }
 
 #ifdef DEBUG

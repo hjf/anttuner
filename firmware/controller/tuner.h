@@ -2,7 +2,25 @@
 #define ROLE_ANTENNA 1
 #define ROLE_SWITCH 2
 
-byte addresses[][6] = {"1Node", "2Node", "3Node" };
+#define SWITCH_MAX_OUTPUTS 4
+#define SWITCH_MAX_ANTENNAS 12
+
+byte addresses[][6] = {"2Node", "1Node", "3Node" };
+
+enum switch_command {
+  SWITCH_NOOP,
+  SWITCH_CHANGE
+};
+
+struct switch_request {
+  enum switch_command command;
+  char set_output[4];
+};
+
+struct switch_response {
+  int temperature;
+  char current_output[4];
+};
 
 enum antenna_status {
   STOPPED,
@@ -15,6 +33,7 @@ struct antenna_response {
   int current_step;
   int temperature;
   enum antenna_status status;
+
 };
 
 enum antenna_command {
