@@ -1,3 +1,5 @@
+#ifndef TUNER_H
+#define TUNER_H
 #define ROLE_CONTROLLER 0
 #define ROLE_ANTENNA 1
 #define ROLE_SWITCH 2
@@ -5,7 +7,7 @@
 #define SWITCH_MAX_OUTPUTS 4
 #define SWITCH_MAX_ANTENNAS 12
 
-byte addresses[][6] = {"2Node", "1Node", "3Node" };
+extern byte addresses[][6]; 
 
 enum switch_command {
   SWITCH_NOOP,
@@ -50,3 +52,4 @@ struct antenna_request {
   bool relative;
   bool force;
 };
+#endif
