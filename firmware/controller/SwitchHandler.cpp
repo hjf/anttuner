@@ -3,42 +3,20 @@
 struct switch_request sreq;
 struct switch_response sres;
 
-void handleSwitch(LiquidCrystal* lcd, RF24* radio) {
-
-
-  lcd->setCursor(0, 2);
+void handleSwitch(antenna_switch_status* ant_switch_status, RF24* radio, int selectedAntenna) {
   radio->openWritingPipe(addresses[ROLE_SWITCH]);
+  if (ant_switch_status->selected_antenna != selectedAntenna) {
+    sreq.command = SWITCH_CHANGE;
+    sreq.set_output[1] = selectedAntenna;
+  }
   if ( radio->write(&sreq, sizeof(switch_request)) ) {
-    // sreq.set_output[0]++;
-    //sreq.set_output[1]++;
-
-    lcd->print(F("SW: "));
-
-
-    if (!radio->available()) {
-      Serial.print(F("Got blank response"));
-    } else {
-      while (radio->available() ) {
-        radio->read( &sres, sizeof( struct switch_response));
-        for (int i = 0; i < SWITCH_MAX_OUTPUTS; i++) {
-
-          lcd->print("[");
-          if (sres.current_output[i] == -1) {
-            lcd->print("--]");
-            continue;
-          }
-
-          //off by one
-          sres.current_output[i]++;
-          if (sres.current_output[i] < 10)
-            lcd->print("0");
-          lcd->print(sres.current_output[i], DEC);
-          lcd->print("]");
-        }
-      }
+    ant_switch_status->status = REMOTE_STATUS_OK;
+    while (radio->available() ) {
+      radio->read( &sres, sizeof( struct switch_response));
+      ant_switch_status->selected_antenna = sres.current_output[1];
     }
-
   } else {
-    lcd->print(F("Switch timeout      "));
+    ant_switch_status->status = REMOTE_STATUS_COMM_ERROR;
+    sreq.command = SWITCH_NOOP;
   }
 }
