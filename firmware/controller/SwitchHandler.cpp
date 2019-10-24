@@ -3,13 +3,14 @@
 struct switch_request sreq;
 struct switch_response sres;
 
-void handleSwitch(antenna_switch_status* ant_switch_status, RF24* radio, int selectedAntenna) {
+void handleSwitch(antenna_switch_status* ant_switch_status, RF24* radio, int selectedAntenna, char pressedKey) {
   radio->openWritingPipe(addresses[ROLE_SWITCH]);
   if (ant_switch_status->selected_antenna != selectedAntenna) {
     sreq.command = SWITCH_CHANGE;
     sreq.set_output[1] = selectedAntenna;
   }
   if ( radio->write(&sreq, sizeof(switch_request)) ) {
+    sreq.command = SWITCH_NOOP;
     ant_switch_status->status = REMOTE_STATUS_OK;
     while (radio->available() ) {
       radio->read( &sres, sizeof( struct switch_response));
@@ -17,6 +18,7 @@ void handleSwitch(antenna_switch_status* ant_switch_status, RF24* radio, int sel
     }
   } else {
     ant_switch_status->status = REMOTE_STATUS_COMM_ERROR;
+    
     sreq.command = SWITCH_NOOP;
   }
 }

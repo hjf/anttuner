@@ -17,20 +17,26 @@ struct tuner tuner_vertical_4080;
 
 int selectedAntenna;
 
-const char pgmLayout[] PROGMEM = {
-  'a', 'b', 'c', 'd', 'T', 'r', 'q',
-  '1', '4', '7', 'E', 'L', 't', 'w',
-  '2', '5', '8', '0', 'C', 'y', 'e',
-  '3', '6', '9', 'N', 'K', 'i', 'u'
-};
 
-KeyboardLayout keyLayout(4, 7, pgmLayout);
-MatrixKeyboardManager keyboard;
+
+//{
+//  'a', 'b', 'c', 'd', 'T', 'r', 'q',
+//  '1', '4', '7', 'E', 'L', 't', 'w',
+//  '2', '5', '8', '0', 'C', 'y', 'e',
+//  '3', '6', '9', 'N', 'K', 'i', 'u'
+//};
+
+
 IoAbstractionRef multiIo = multiIoExpander(100);
 
+char pressedKey;
+char queuedKey;
 class MyKeyboardListener : public KeyboardListener {
   public:
     void keyPressed(char key, bool held) override {
+      pressedKey = key;
+      //Serial.println(key);
+      //delay(50);
       switch (key) {
         case 'q':
           selectedAntenna = 0;
@@ -41,6 +47,7 @@ class MyKeyboardListener : public KeyboardListener {
         case 'e':
           selectedAntenna = 2;
           break;
+
         default:
           return;
       }
@@ -50,6 +57,9 @@ class MyKeyboardListener : public KeyboardListener {
     }
 } myListener;
 
+
+KeyboardLayout keyLayout(4, 7, pgmLayout);
+MatrixKeyboardManager keyboard;
 void setup() {
   // put your setup code here, to run once:
   Serial.begin(115200);
@@ -85,7 +95,7 @@ void setup() {
   keyLayout.setRowPin(0, 7);
   keyLayout.setRowPin(1, 8);
   keyLayout.setRowPin(2, 9);
-  keyLayout.setRowPin(3, 10);
+  keyLayout.setRowPin(3, A2);
 
   keyboard.initialise(multiIo, &keyLayout, &myListener);
   keyboard.setRepeatKeyMillis(850, 350);
@@ -102,21 +112,27 @@ void setup() {
   presets[2].tuner = &tuner_vertical_4080;
   presets[2].description = "VERT 40-60-80";
   ant_switch_status.selected_antenna = -1;
-  selectedAntenna = 0;
+  selectedAntenna = -1;
 }
 
 void loop() {
+
   radio.stopListening();
 
-  handleSwitch(&ant_switch_status, &radio, selectedAntenna);
-  handleTuner(presets, &radio, ant_switch_status.selected_antenna);
+  queuedKey = pressedKey;
+  pressedKey = 0;
+  
+    handleSwitch(&ant_switch_status, &radio, selectedAntenna, queuedKey);
+
+
+  handleTuner(presets, &radio, ant_switch_status.selected_antenna, queuedKey);
 
   handleRF(&rfInfo);
-  handleLCD(&lcd, &rfInfo, &ant_switch_status, presets);
+  handleLCD(&lcd, &rfInfo, &ant_switch_status, presets, queuedKey);
 
   radio.startListening();
   taskManager.runLoop();
+  queuedKey = 0;
 
-
-  delay(10);
+  delay(50);
 }

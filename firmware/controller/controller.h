@@ -1,6 +1,7 @@
 #ifndef CONTROLLER_H
 #define CONTROLLER_H
-
+#include <Arduino.h>
+const char pgmLayout[] PROGMEM = "abcdTrq147ELtw2580Cye369NKiu";
 #include <SPI.h>
 #include <Wire.h>
 
@@ -42,12 +43,23 @@ enum remote_module_status {
   REMOTE_STATUS_COMM_ERROR
 };
 
+enum tuner_status {
+  TUNER_STATUS_OK,
+  TUNER_STATUS_CHANGING_L,
+  TUNER_STATUS_CHANGING_C,
+  TUNER_STATUS_AUTO_TUNING
+};
 struct tuner {
   enum tuner_type type;
   enum remote_module_status status;
+  enum tuner_status local_status;
   
   int L;
   int C;
+
+  int next_L;
+  int next_C;
+  bool execute;
 };
 
 struct antenna_switch_status {
@@ -75,8 +87,8 @@ struct RFInfo {
   float MaxSWR;
 };
 
-void handleTuner(struct switch_preset* presets, RF24* radio, int selectedPreset);
-void handleSwitch(antenna_switch_status* ant_switch_status, RF24* radio, int selectedAntenna);
+void handleTuner(struct switch_preset* presets, RF24* radio, int selectedPreset, char pressedKey);
+void handleSwitch(antenna_switch_status* ant_switch_status, RF24* radio, int selectedAntenna, char pressedKey);
 void handleRF(RFInfo* rfInfo);
-void handleLCD(LiquidCrystal* lcd, RFInfo* rfInfo, antenna_switch_status* ant_switch_status, switch_preset* preset);
+void handleLCD(LiquidCrystal* lcd, RFInfo* rfInfo, antenna_switch_status* ant_switch_status, switch_preset* preset, char pressedKey);
 #endif
