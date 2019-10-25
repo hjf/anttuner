@@ -57,6 +57,11 @@ class MyKeyboardListener : public KeyboardListener {
     }
 } myListener;
 
+void onEncoderChange(int newValue) {
+  switches.getEncoder()->setCurrentReading(50);
+  Serial.println(50 - newValue);
+}
+
 
 KeyboardLayout keyLayout(4, 7, pgmLayout);
 MatrixKeyboardManager keyboard;
@@ -113,6 +118,8 @@ void setup() {
   presets[2].description = "VERT 40-60-80";
   ant_switch_status.selected_antenna = -1;
   selectedAntenna = -1;
+  setupRotaryEncoderWithInterrupt(2, 3, onEncoderChange);
+  switches.changeEncoderPrecision(100, 0);
 }
 
 void loop() {
@@ -121,8 +128,8 @@ void loop() {
 
   queuedKey = pressedKey;
   pressedKey = 0;
-  
-    handleSwitch(&ant_switch_status, &radio, selectedAntenna, queuedKey);
+
+  handleSwitch(&ant_switch_status, &radio, selectedAntenna, queuedKey);
 
 
   handleTuner(presets, &radio, ant_switch_status.selected_antenna, queuedKey);
@@ -134,5 +141,5 @@ void loop() {
   taskManager.runLoop();
   queuedKey = 0;
 
-  delay(50);
+  //delay(50);
 }
