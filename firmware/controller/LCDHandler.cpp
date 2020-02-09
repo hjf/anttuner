@@ -5,7 +5,7 @@ void enableCursor(LiquidCrystal* lcd);
 void disableCursor(LiquidCrystal* lcd);
 
 void printPaddedNumber(LiquidCrystal* lcd, int n, int width, char pad);
-void handleLCD(LiquidCrystal* lcd, RFInfo* rfInfo, antenna_switch_status* ant_switch_status, switch_preset* preset, char pressedKey) {
+void handleLCD(LiquidCrystal* lcd, RFInfo* rfInfo, antenna_switch_status* ant_switch_status, switch_preset* preset, char pressedKey, RadioInfo* radioInfo) {
   if (ant_switch_status->selected_antenna == -1) {
     lcd->setCursor(0, 0);
     lcd->print(F("ANT: "));
@@ -63,6 +63,24 @@ void handleLCD(LiquidCrystal* lcd, RFInfo* rfInfo, antenna_switch_status* ant_sw
     }
   }
   //seccion RF
+
+  lcd->setCursor(0, 2);
+  lcd->print(F("F: "));
+  if (radioInfo->Frequency < 10000)
+    lcd->print(F(" "));
+  if (radioInfo->Frequency < 100000)
+    lcd->print(F(" "));
+  if (radioInfo->Frequency < 1000000)
+    lcd->print(F(" "));
+  if (radioInfo->Frequency < 10000000)
+    lcd->print(F(" "));
+  lcd->print(radioInfo->Frequency / 1000.0);
+  lcd->print(F(" "));
+  lcd->print(radioInfo->Mode);
+  lcd->print(F(" "));
+
+  
+
   lcd->setCursor(0, 3);
   if (rfInfo->rfDetected == true) {
     lcd->print(F("P: "));

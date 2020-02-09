@@ -3,16 +3,22 @@
 #include "string.h"
 
 byte addresses[][6] = {"2Node", "1Node", "3Node" };
-
+unsigned long f_query_timer;
+char radioBuf[64];
+char radioBufPtr;
 const int rs = 0, rw = 1, en = 2, d4 = 4, d5 = 5, d6 = 6, d7 = 7;
 LiquidCrystal lcd(rs, rw, en, d4, d5, d6, d7, ioFrom8574(0x27));
 RF24 radio(NRF_CE, NRF_CS);
+AltSoftSerial altSerial;
+
 struct RFInfo rfInfo;
 struct switch_preset presets[3];
 struct antenna_switch_status ant_switch_status;
 
 struct tuner no_tuner;
 struct tuner tuner_vertical_4080;
+
+struct RadioInfo radioInfo;
 
 
 int selectedAntenna;
@@ -59,7 +65,7 @@ class MyKeyboardListener : public KeyboardListener {
 
 void onEncoderChange(int newValue) {
   switches.getEncoder()->setCurrentReading(50);
-  Serial.println(50 - newValue);
+
 }
 
 
@@ -67,7 +73,7 @@ KeyboardLayout keyLayout(4, 7, pgmLayout);
 MatrixKeyboardManager keyboard;
 void setup() {
   // put your setup code here, to run once:
-  Serial.begin(115200);
+  Serial.begin(4800);
 
   lcd.configureBacklightPin(3);
   lcd.backlight();
@@ -98,8 +104,8 @@ void setup() {
   keyLayout.setColPin(6, 139);
 
   keyLayout.setRowPin(0, 7);
-  keyLayout.setRowPin(1, 8);
-  keyLayout.setRowPin(2, 9);
+  keyLayout.setRowPin(1, 2);
+  keyLayout.setRowPin(2, 3);
   keyLayout.setRowPin(3, A2);
 
   keyboard.initialise(multiIo, &keyLayout, &myListener);
@@ -109,10 +115,10 @@ void setup() {
   tuner_vertical_4080.type = TUNER_L;
 
   presets[0].tuner = &no_tuner;
-  presets[0].description = "VERTICAL 20M ";
+  presets[0].description = "YAGI 20M     ";
 
   presets[1].tuner = &no_tuner;
-  presets[1].description = "DIPOLO 20M   ";
+  presets[1].description = "MORGAIN 20-40";
 
   presets[2].tuner = &tuner_vertical_4080;
   presets[2].description = "VERT 40-60-80";
@@ -120,8 +126,91 @@ void setup() {
   selectedAntenna = -1;
   setupRotaryEncoderWithInterrupt(2, 3, onEncoderChange);
   switches.changeEncoderPrecision(100, 0);
+  radioBufPtr = 0;
+  altSerial.begin(4800);
+  f_query_timer = millis() + 1000;
 }
 
+void doSerial() {
+  for (char i = 0; i < 10; i++) {
+REDO:
+    if (radioBufPtr > sizeof(radioBuf))
+      radioBufPtr = 0;
+
+    while (altSerial.available()) {
+      f_query_timer = millis() + 5000;
+      byte alt = altSerial.read();
+      Serial.write(alt);
+      radioBuf[radioBufPtr++] = alt;
+
+      if (alt == ';') {
+
+        radioBufPtr = 0;
+        if (radioBuf[0] == 'I' && radioBuf[1] == 'F') {
+          radioBuf[13] = 0;
+          radioInfo.Frequency = atol(radioBuf + 2);
+          String mode;
+          switch (radioBuf[29]) {
+            case '1':
+              mode = F("LSB");
+              break;
+            case '2':
+              mode = F("USB");
+              break;
+            case '3':
+              mode = F("CW ");
+              break;
+            case '4':
+              mode = F("FM ");
+              break;
+            case '5':
+              mode = F("AM ");
+              break;
+            case '6':
+              mode = F("FSK");
+              break;
+            case '7':
+              mode = F("CWR");
+              break;
+            case '8':
+              mode = F("TUN");
+              break;
+            case '9':
+              mode = F("FSR");
+              break;
+
+            default:
+              mode = F("UNK");
+              break;
+          }
+          mode.toCharArray(radioInfo.Mode, 4);
+        }
+      }
+
+    }
+
+    while (Serial.available()) {
+      f_query_timer = millis() + 5000;
+      byte real = Serial.read();
+      altSerial.write(real);
+      if (real == ';') {
+        unsigned long bail = millis() + 5;
+        while (!altSerial.available()) {
+          if (millis() > bail)
+            goto BAIL;
+        }
+        goto REDO;
+      }
+
+    }
+BAIL:
+    if (millis() > f_query_timer) {
+      f_query_timer = millis() + 2000;
+      altSerial.print("IF;");
+    }
+    taskManager.runLoop();
+  }
+}
 void loop() {
 
   radio.stopListening();
@@ -129,13 +218,15 @@ void loop() {
   queuedKey = pressedKey;
   pressedKey = 0;
 
+ 
   handleSwitch(&ant_switch_status, &radio, selectedAntenna, queuedKey);
-
-
+ 
   handleTuner(presets, &radio, ant_switch_status.selected_antenna, queuedKey);
-
+ 
   handleRF(&rfInfo);
-  handleLCD(&lcd, &rfInfo, &ant_switch_status, presets, queuedKey);
+ 
+  handleLCD(&lcd, &rfInfo, &ant_switch_status, presets, queuedKey, &radioInfo);
+  doSerial();
 
   radio.startListening();
   taskManager.runLoop();

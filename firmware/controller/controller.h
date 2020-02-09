@@ -1,6 +1,16 @@
+
+
+
 #ifndef CONTROLLER_H
 #define CONTROLLER_H
 #include <Arduino.h>
+#include <AltSoftSerial.h>
+
+
+
+#define SOFTWARE_SERIAL_TX 2
+#define SOFTWARE_SERIAL_RX 3
+
 const char pgmLayout[] PROGMEM = "abcdTrq147ELtw2580Cye369NKiu";
 #include <SPI.h>
 #include <Wire.h>
@@ -13,6 +23,8 @@ const char pgmLayout[] PROGMEM = "abcdTrq147ELtw2580Cye369NKiu";
 
 #include <KeyboardManager.h>
 #include "LiquidCrystalIO.h"
+
+
 
 
 //Pines del 74HC595
@@ -87,8 +99,13 @@ struct RFInfo {
   float MaxSWR;
 };
 
+struct RadioInfo {
+  float Frequency;
+  char Mode[4];
+};
+
 void handleTuner(struct switch_preset* presets, RF24* radio, int selectedPreset, char pressedKey);
 void handleSwitch(antenna_switch_status* ant_switch_status, RF24* radio, int selectedAntenna, char pressedKey);
 void handleRF(RFInfo* rfInfo);
-void handleLCD(LiquidCrystal* lcd, RFInfo* rfInfo, antenna_switch_status* ant_switch_status, switch_preset* preset, char pressedKey);
+void handleLCD(LiquidCrystal* lcd, RFInfo* rfInfo, antenna_switch_status* ant_switch_status, switch_preset* preset, char pressedKey, RadioInfo* radioInfo);
 #endif

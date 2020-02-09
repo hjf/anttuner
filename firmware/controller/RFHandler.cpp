@@ -7,16 +7,16 @@ float last_Vrev;
 float Afwd;
 float Arev;
 int RFoff;
-#define DIODE_DROP 0.5
-//Turn factor: (Vueltas *0,707)/50  para 13 vueltas=.18384
+#define DIODE_DROP 0.25
+//Turn factor: (Vueltas *0,707)/50  para 13 vueltas=.18384  sino grande 0.42426406871
 
-#define TURN_FACTOR 0.1838477631085
+#define TURN_FACTOR 0.18384
 void handleRF(RFInfo* rfInfo) {
 
   // reads inputs before actions can be taken
-  Vfwd = analogRead(Vfwdpin_Anlg); // read forward voltage from RF remote directional detector
-  Vfwd = constrain(Vfwd, 1, 1023); // Vfwd values must be greater than zero to rfInfo->Prevent divide by zero in rfInfo->SWR Calc
-  Vrev = analogRead(Vrevpin_Anlg); // read forward voltage from RF remote directional detector
+  Vfwd = analogRead(Vfwdpin_Anlg)*2.207; // read forward voltage from RF remote directional detector
+  Vfwd = constrain(Vfwd, 1, 2257); // Vfwd values must be greater than zero to rfInfo->Prevent divide by zero in rfInfo->SWR Calc
+  Vrev = analogRead(Vrevpin_Anlg)*2.207; // read forward voltage from RF remote directional detector
 
   /////////////////////////////////////////////////////////////////////////////////////////////
   //                RF Forward / Reverse Power and VrfInfo->SWR Calculations

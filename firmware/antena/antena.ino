@@ -7,7 +7,7 @@
 #define NRF_PWR 1
 #define VSENSE A0
 
-#define MAX_STEPS 10800
+#define MAX_STEPS 11860
 
 //#define DEBUG
 
