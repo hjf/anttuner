@@ -1,11 +1,17 @@
 #include "controller.h"
 #include <string.h>
 bool cursorStatus;
+long lcdnextupdate = 0;
 void enableCursor(LiquidCrystal* lcd);
 void disableCursor(LiquidCrystal* lcd);
 
 void printPaddedNumber(LiquidCrystal* lcd, int n, int width, char pad);
 void handleLCD(LiquidCrystal* lcd, RFInfo* rfInfo, antenna_switch_status* ant_switch_status, switch_preset* preset, char pressedKey, RadioInfo* radioInfo) {
+  
+  if (millis() < lcdnextupdate)
+    return;
+  lcdnextupdate = millis() + 200;
+  
   if (ant_switch_status->selected_antenna == -1) {
     lcd->setCursor(0, 0);
     lcd->print(F("ANT: "));
@@ -55,7 +61,30 @@ void handleLCD(LiquidCrystal* lcd, RFInfo* rfInfo, antenna_switch_status* ant_sw
       lcd->print(F(" C:"));
       sprintf(nbuf, "%5d", wpreset->tuner->C);
       lcd->print(nbuf);
+    } else if (wpreset->tuner->type == RELAY_TUNER) {
+
+      if (wpreset->tuner->local_status == TUNER_STATUS_CHANGING_L) {
+        lcd->print(F("Lserie: "));
+        printPaddedNumber(lcd, wpreset->tuner->next_L, 5, '_');
+      } else if (wpreset->tuner->local_status == TUNER_STATUS_CHANGING_SHUNT_L) {
+        lcd->print(F("Lshunt: "));
+        printPaddedNumber(lcd, wpreset->tuner->next_shunt_L, 5, '_');
+      }  else if (wpreset->tuner->local_status == TUNER_STATUS_CHANGING_SHUNT_C) {
+        lcd->print(F("Cshunt: "));
+        printPaddedNumber(lcd, wpreset->tuner->next_shunt_C, 5, '_');
+      }      else {
+        sprintf(nbuf, "LSe%2d", wpreset->tuner->L);
+        lcd->print(nbuf);
+
+        sprintf(nbuf, "LSh%2d", wpreset->tuner->shunt_L);
+        lcd->print(nbuf);
+
+        sprintf(nbuf, "CSh%2d", wpreset->tuner->shunt_C);
+        lcd->print(nbuf);
+      }
     }
+
+
 
 
     if (wpreset->tuner->status == REMOTE_STATUS_OK && (wpreset->tuner->type == TUNER_L || preset->tuner->type == TUNER_C)) {
@@ -79,7 +108,7 @@ void handleLCD(LiquidCrystal* lcd, RFInfo* rfInfo, antenna_switch_status* ant_sw
   lcd->print(radioInfo->Mode);
   lcd->print(F(" "));
 
-  
+
 
   lcd->setCursor(0, 3);
   if (rfInfo->rfDetected == true) {

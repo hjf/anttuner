@@ -3,7 +3,14 @@
 struct switch_request sreq;
 struct switch_response sres;
 
-void handleSwitch(antenna_switch_status* ant_switch_status, RF24* radio, int selectedAntenna, char pressedKey) {
+void handleSwitch(antenna_switch_status* ant_switch_status, RF24* radio, int selectedAntenna, char pressedKey, RadioInfo* radioInfo) {
+
+  if (radioInfo->Frequency < 13000000)
+    selectedAntenna = 2;
+  else
+    selectedAntenna = 0;
+
+
   radio->openWritingPipe(addresses[ROLE_SWITCH]);
   if (selectedAntenna > -1 && ant_switch_status->selected_antenna != selectedAntenna) {
     sreq.command = SWITCH_CHANGE;
@@ -18,7 +25,7 @@ void handleSwitch(antenna_switch_status* ant_switch_status, RF24* radio, int sel
     }
   } else {
     ant_switch_status->status = REMOTE_STATUS_COMM_ERROR;
-    
+
     sreq.command = SWITCH_NOOP;
   }
 }

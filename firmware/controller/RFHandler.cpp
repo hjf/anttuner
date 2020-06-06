@@ -12,7 +12,10 @@ int RFoff;
 
 #define TURN_FACTOR 0.18384
 void handleRF(RFInfo* rfInfo) {
-
+static long nextupdate = 0;
+  if (millis() < nextupdate)
+    return;
+  nextupdate = millis() + 500;
   // reads inputs before actions can be taken
   Vfwd = analogRead(Vfwdpin_Anlg)*2.207; // read forward voltage from RF remote directional detector
   Vfwd = constrain(Vfwd, 1, 2257); // Vfwd values must be greater than zero to rfInfo->Prevent divide by zero in rfInfo->SWR Calc

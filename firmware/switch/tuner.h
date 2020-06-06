@@ -4,7 +4,9 @@
 
 #define SWITCH_MAX_OUTPUTS 4
 #define SWITCH_MAX_ANTENNAS 12
-
+#define RADIO_RATE RF24_250KBPS
+#define RADIO_CHANNEL 113
+#define RADIO_CRC RF24_CRC_16
 byte addresses[][6] = {"2Node", "1Node", "3Node" };
 
 enum switch_command {

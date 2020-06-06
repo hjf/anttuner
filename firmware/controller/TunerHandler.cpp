@@ -10,6 +10,12 @@ void handleTuner(struct switch_preset* presets, RF24* radio, int selectedPreset,
   if (tuner->type == NO_TUNER)
     return;
 
+  if (tuner->type == RELAY_TUNER)
+    return;
+
+
+
+    
   if (pressedKey == 'L') {
     tuner->local_status = TUNER_STATUS_CHANGING_L;
     tuner->next_L = tuner->L;

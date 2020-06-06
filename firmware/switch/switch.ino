@@ -3,7 +3,7 @@
 
 #include <RF24.h>
 #include "tuner.h"
-
+unsigned long configTimer;
 
 char output_map[SWITCH_MAX_OUTPUTS][SWITCH_MAX_ANTENNAS] = {
   { A0, A1, A2, A3, A4, A5, -1, -1, -1, -1, -1, -1 },
@@ -44,7 +44,10 @@ void loop() {
 
   byte pipeNo;
   struct switch_request req;
-
+  if (radio.failureDetected) {
+    radio.failureDetected = false;
+    initializeRadio();
+  }
   while ( radio.available(&pipeNo)) {
     radio.read( &req, sizeof(struct switch_request) );
     radio.writeAckPayload(pipeNo, &response, sizeof(struct switch_response) );
@@ -108,13 +111,27 @@ void loop() {
     response.temperature = t * 10;
     await_adc = false;
   }
+  if (millis() - configTimer > 5000) {
+    configTimer = millis();
+    if (radio.getDataRate() != RADIO_RATE) {
+      radio.failureDetected = true;
+      Serial.print("Radio configuration error detected");
+    }
+  }
+
 }
 
 void initializeRadio() {
   radio.begin();
   radio.enableAckPayload();                     // Allow optional ack payloads
   radio.enableDynamicPayloads();                // Ack payloads are dynamic payloads
-  radio.setPALevel(RF24_PA_MAX);
+  radio.setPALevel(RF24_PA_LOW);
+  radio.setAutoAck(1);                     // Ensure autoACK is enabled
+  radio.setRetries(5, 15);                 // Optionally, increase the delay between retries. Want the number of auto-retries as high as possible (15)
+  radio.setCRCLength(RADIO_CRC);         // Set CRC length to 16-bit to ensure quality of data
+  radio.setChannel(RADIO_CHANNEL);                     // Set the channel
+
+  radio.setDataRate(RADIO_RATE);           // Raise the data rate to reduce transmission distance and increase lossiness
 
   radio.openWritingPipe(addresses[ROLE_CONTROLLER]);
   radio.openReadingPipe(1, addresses[ROLE_SWITCH]);

@@ -6,7 +6,7 @@
 #include <Arduino.h>
 #include <AltSoftSerial.h>
 
-
+extern AltSoftSerial altSerial;
 
 #define SOFTWARE_SERIAL_TX 2
 #define SOFTWARE_SERIAL_RX 3
@@ -33,7 +33,7 @@ const char pgmLayout[] PROGMEM = "abcdTrq147ELtw2580Cye369NKiu";
 #define SR_LAT 6
 
 //Pines del NRF24L01
-#define NRF_CE A0
+#define NRF_CE 10
 #define NRF_CS A1
 
 //Pines del roimetro
@@ -45,7 +45,8 @@ enum tuner_type {
   NO_TUNER,
   TUNER_LC,
   TUNER_L,
-  TUNER_C
+  TUNER_C,
+  RELAY_TUNER
 
 };
 
@@ -59,18 +60,24 @@ enum tuner_status {
   TUNER_STATUS_OK,
   TUNER_STATUS_CHANGING_L,
   TUNER_STATUS_CHANGING_C,
-  TUNER_STATUS_AUTO_TUNING
+  TUNER_STATUS_AUTO_TUNING,
+  TUNER_STATUS_CHANGING_SHUNT_L,
+  TUNER_STATUS_CHANGING_SHUNT_C
 };
 struct tuner {
   enum tuner_type type;
   enum remote_module_status status;
   enum tuner_status local_status;
-  
+
   int L;
   int C;
+  int shunt_L;
+  int shunt_C;
 
   int next_L;
   int next_C;
+  int next_shunt_L;
+  int next_shunt_C;
   bool execute;
 };
 
@@ -105,7 +112,10 @@ struct RadioInfo {
 };
 
 void handleTuner(struct switch_preset* presets, RF24* radio, int selectedPreset, char pressedKey);
-void handleSwitch(antenna_switch_status* ant_switch_status, RF24* radio, int selectedAntenna, char pressedKey);
+void handleSwitch(antenna_switch_status* ant_switch_status, RF24* radio, int selectedAntenna, char pressedKey, RadioInfo* radioInfo);
 void handleRF(RFInfo* rfInfo);
+void handleRelayTuner(struct switch_preset* presets, RF24* radio, int selectedPreset, char pressedKey, char* encoderValue, RadioInfo* radioInfo);
 void handleLCD(LiquidCrystal* lcd, RFInfo* rfInfo, antenna_switch_status* ant_switch_status, switch_preset* preset, char pressedKey, RadioInfo* radioInfo);
+void HandleSerial(RadioInfo* radioInfo);
+void configureRadio();
 #endif
