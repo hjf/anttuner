@@ -3,12 +3,16 @@
 struct switch_request sreq;
 struct switch_response sres;
 
-void handleSwitch(antenna_switch_status* ant_switch_status, RF24* radio, int selectedAntenna, char pressedKey, RadioInfo* radioInfo) {
+void handleSwitch(antenna_switch_status* ant_switch_status, RF24* radio, int selectedAntenna, char pressedKey, RadioInfo* radioInfo, switch_response* psres) {
 
-  if (radioInfo->Frequency < 13000000)
-    selectedAntenna = 2;
-  else
-    selectedAntenna = 0;
+  if (ant_switch_status->autoswitching) {
+    
+    if (radioInfo->Frequency < 13000000 || (radioInfo->Frequency < 18200000 && radioInfo->Frequency > 18000000))
+      selectedAntenna = 2;
+    
+    else
+      selectedAntenna = 0;
+  }
 
 
   radio->openWritingPipe(addresses[ROLE_SWITCH]);

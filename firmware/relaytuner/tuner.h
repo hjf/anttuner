@@ -10,6 +10,8 @@
 #define RADIO_RATE RF24_250KBPS
 #define RADIO_CHANNEL 113
 #define RADIO_CRC RF24_CRC_16
+
+#define TUNER_MAGIC_NUMBER 0x8f7a3098
 extern byte addresses[][6];
 
 enum relaytuner_command {
@@ -22,12 +24,14 @@ struct relaytuner_request {
   char set_shunt_l;
   char set_series_l;
   char set_shunt_c;
+  unsigned long magic;
 };
 
 struct relaytuner_response {
   char shunt_l;
   char series_l;
   char shunt_c;
+  unsigned long magic;
 };
 
 enum switch_command {

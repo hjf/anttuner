@@ -58,20 +58,27 @@ void loop() {
       continue;
     }
 
-    setSeriesL(rreq.set_series_l);
-    setShuntC(rreq.set_shunt_c);
-    setShuntL(rreq.set_shunt_l);
+    if (rreq.magic != TUNER_MAGIC_NUMBER) {
+      continue;
+    } else {
 
-    rres.series_l = rreq.set_series_l;
-    rres.shunt_c = rreq.set_shunt_c;
-    rres.shunt_l = rreq.set_shunt_l;
 
-    Serial.print("Series L: ");
-    Serial.println(rreq.set_series_l);
-    Serial.print("Shunt L: ");
-    Serial.println(rreq.set_shunt_c);
-    Serial.print("Shunt C: ");
-    Serial.println(rreq.set_shunt_l);
+      setSeriesL(rreq.set_series_l);
+      setShuntC(rreq.set_shunt_c);
+      setShuntL(rreq.set_shunt_l);
+
+      rres.series_l = rreq.set_series_l;
+      rres.shunt_c = rreq.set_shunt_c;
+      rres.shunt_l = rreq.set_shunt_l;
+      rres.magic = TUNER_MAGIC_NUMBER;
+
+      Serial.print("Series L: ");
+      Serial.println(rreq.set_series_l);
+      Serial.print("Shunt L: ");
+      Serial.println(rreq.set_shunt_c);
+      Serial.print("Shunt C: ");
+      Serial.println(rreq.set_shunt_l);
+    }
 
   }
 

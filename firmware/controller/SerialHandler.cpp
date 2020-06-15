@@ -6,8 +6,8 @@ char radioBufPtr;
 AltSoftSerial altSerial;
 
 void HandleSerial(RadioInfo* radioInfo) {
-  if (!altSerial.available() && !Serial.available())
-    return;
+//  if (!altSerial.available() && !Serial.available())
+//    return;
   for (char i = 0; i < 64; i++) {
 REDO:
     if (radioBufPtr > sizeof(radioBuf))

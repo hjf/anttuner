@@ -22,7 +22,7 @@ struct tuner tuner_relay;
 struct RadioInfo radioInfo;
 
 
-int selectedAntenna;
+char selectedAntenna;
 char encoderValue;
 
 
@@ -53,6 +53,10 @@ class MyKeyboardListener : public KeyboardListener {
           break;
         case 'e':
           selectedAntenna = 2;
+          break;
+
+        case 'y':
+          ant_switch_status.autoswitching = !ant_switch_status.autoswitching;
           break;
 
         default:
@@ -95,10 +99,43 @@ void setup() {
   Serial.begin(115200);
   lcd.configureBacklightPin(3);
   lcd.backlight();
+  const char antena[8] PROGMEM = {
+    B10101,
+    B10101,
+    B01110,
+    B00100,
+    B00100,
+    B00100,
+    B00100,
+  };
+
+  const char coil[8] PROGMEM = {
+    B11110,
+    B00001,
+    B00110,
+    B00001,
+    B00110,
+    B00001,
+    B11110,
+  };
+
+  const char cap[8] PROGMEM = {
+    B00100,
+    B00100,
+    B11111,
+    B00000,
+    B11111,
+    B00100,
+    B00100,
+  };
+
 
   Wire.begin();
   // set up the LCD's number of columns and rows:
   lcd.begin(20, 4);
+  lcd.createChar(1, antena);
+  lcd.createChar(2, coil);
+  lcd.createChar(3, cap);
   //lcd.print("Inicializado");
   lcd.clear();
   configureRadio();
@@ -122,16 +159,17 @@ void setup() {
   tuner_relay.type = RELAY_TUNER;
 
   presets[0].tuner = &no_tuner;
-  presets[0].description = "YAGI 10-20M  ";
+  presets[0].description = "YAGI 10-20M     ";
 
   presets[1].tuner = &no_tuner;
-  presets[1].description = "VERTICAL 40M ";
+  presets[1].description = "                ";
 
   //presets[2].tuner = &tuner_vertical_4080;
   presets[2].tuner = &tuner_relay;
-  presets[2].description = "RELAY        ";
+  presets[2].description = "VERTICAL        ";
 
   ant_switch_status.selected_antenna = -1;
+  ant_switch_status.autoswitching = !0;
   selectedAntenna = -1;
   setupRotaryEncoderWithInterrupt(2, A3, onEncoderChange);
   switches.changeEncoderPrecision(100, 0);
@@ -173,17 +211,17 @@ void loop() {
   pressedKey = 0;
 
 
-  handleSwitch(&ant_switch_status, &radio, selectedAntenna, queuedKey, &radioInfo);
+  handleSwitch(&ant_switch_status, &radio, selectedAntenna, queuedKey, &radioInfo, &sres);
 
   HandleSerial(&radioInfo);
 
   //handleTuner(presets, &radio, ant_switch_status.selected_antenna, queuedKey);
   //doSerial();
-  handleRelayTuner(presets, &radio, ant_switch_status.selected_antenna, queuedKey, &encoderValue, &radioInfo);
+  handleRelayTuner(presets, &radio, &ant_switch_status, queuedKey, &encoderValue, &radioInfo);
   HandleSerial(&radioInfo);
   handleRF(&rfInfo);
   HandleSerial(&radioInfo);
-  handleLCD(&lcd, &rfInfo, &ant_switch_status, presets, queuedKey, &radioInfo);
+  handleLCD(&lcd, &rfInfo, &ant_switch_status, presets, queuedKey, &radioInfo, &sres);
   HandleSerial(&radioInfo);
 
   //radio.startListening();

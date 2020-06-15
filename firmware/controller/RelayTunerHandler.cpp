@@ -4,7 +4,9 @@ struct relaytuner_request rreq;
 struct relaytuner_response rres;
 float lastFreq;
 
-void handleRelayTuner(struct switch_preset* presets, RF24* radio, int selectedPreset, char pressedKey, char* encoderValue, RadioInfo* radioInfo) {
+void handleRelayTuner(struct switch_preset* presets, RF24* radio, antenna_switch_status* ant_switch_status, char pressedKey, char* encoderValue, RadioInfo* radioInfo) {
+
+
   char enc = 0;
   //Serial.println(*encoderValue,HEX);
   if (*encoderValue != 0) {
@@ -18,9 +20,9 @@ void handleRelayTuner(struct switch_preset* presets, RF24* radio, int selectedPr
     return;
   lastKey = pressedKey;
 
-  if (selectedPreset < 0)
+  if (ant_switch_status->selected_antenna < 0)
     return;
-  struct tuner* tuner = (presets + selectedPreset)->tuner;
+  struct tuner* tuner = (presets + ant_switch_status->selected_antenna)->tuner;
 
   if (tuner->type != RELAY_TUNER)
     return;
@@ -124,43 +126,47 @@ void handleRelayTuner(struct switch_preset* presets, RF24* radio, int selectedPr
 
   ////////////semi auto tuner
 
-  if (lastFreq != radioInfo->Frequency && tuner->local_status == TUNER_STATUS_OK) {
+  if (lastFreq != radioInfo->Frequency && tuner->local_status == TUNER_STATUS_OK && ant_switch_status->autoswitching) {
     rreq.command = RELAYTUNER_CHANGE;
 
-    if (radioInfo->Frequency < 3540000.0) {
+    //    if (radioInfo->Frequency < 3540000.0) {
+    //      rreq.set_shunt_l =  11;
+    //      rreq.set_shunt_c =  0;
+    //      rreq.set_series_l =  37;
+    //    }
+    //    else if (radioInfo->Frequency < 3580000.0) {
+    //      rreq.set_shunt_l =  11;
+    //      rreq.set_shunt_c =  0;
+    //      rreq.set_series_l =  36;
+    //    }
+    //    else if (radioInfo->Frequency < 3600000.0) {
+    //      rreq.set_shunt_l =  11;
+    //      rreq.set_shunt_c =  0;
+    //      rreq.set_series_l =  35;
+    //    }
+    //    else if (radioInfo->Frequency < 3650000.0) {
+    //      rreq.set_shunt_l =  11;
+    //      rreq.set_shunt_c =  0;
+    //      rreq.set_series_l =  34;
+    //    }
+    //    else if (radioInfo->Frequency < 3675000.0) {
+    //      rreq.set_shunt_l =  11;
+    //      rreq.set_shunt_c =  0;
+    //      rreq.set_series_l =  33;
+    //    }
+    //    else
+    if (radioInfo->Frequency < 3900000.0) {
+
+      double series = -0.027279369721526 * (radioInfo->Frequency / 1000.0) + 136.02289026677;
       rreq.set_shunt_l =  11;
       rreq.set_shunt_c =  0;
-      rreq.set_series_l =  37;
-    }
-    else if (radioInfo->Frequency < 3580000.0) {
-      rreq.set_shunt_l =  11;
-      rreq.set_shunt_c =  0;
-      rreq.set_series_l =  36;
-    }
-    else if (radioInfo->Frequency < 3600000.0) {
-      rreq.set_shunt_l =  11;
-      rreq.set_shunt_c =  0;
-      rreq.set_series_l =  35;
-    }
-    else if (radioInfo->Frequency < 3650000.0) {
-      rreq.set_shunt_l =  11;
-      rreq.set_shunt_c =  0;
-      rreq.set_series_l =  34;
-    }
-    else if (radioInfo->Frequency < 3675000.0) {
-      rreq.set_shunt_l =  11;
-      rreq.set_shunt_c =  0;
-      rreq.set_series_l =  33;
-    }
-    else if (radioInfo->Frequency < 3680000.0) {
-      rreq.set_shunt_l =  11;
-      rreq.set_shunt_c =  0;
-      rreq.set_series_l =  32;
+      rreq.set_series_l =  series + 0.5;
+      rreq.set_series_l = rreq.set_series_l;// + 1;
     }
     else if (radioInfo->Frequency < 5400000.0) {
       rreq.set_shunt_l =  10;
       rreq.set_shunt_c =  0;
-      rreq.set_series_l =  20;
+      rreq.set_series_l =  18;
     }
     else if (radioInfo->Frequency < 7300000.0) {
       rreq.set_shunt_l =  0;
@@ -168,16 +174,20 @@ void handleRelayTuner(struct switch_preset* presets, RF24* radio, int selectedPr
       rreq.set_series_l =  0;
     }
     else if (radioInfo->Frequency < 10200000.0) {
-      rreq.set_shunt_l =  1;
-      rreq.set_shunt_c =  0;
-      rreq.set_series_l =  4;
+      rreq.set_shunt_l =  0;
+      rreq.set_shunt_c = 1;
+      rreq.set_series_l =  7;
+    }else if (radioInfo->Frequency < 18200000.0) {
+      rreq.set_shunt_l =  6;
+      rreq.set_shunt_c = 0;
+      rreq.set_series_l =  1;
     }
 
   }
   lastFreq = radioInfo->Frequency;
 
 
-
+  rreq.magic = TUNER_MAGIC_NUMBER;
   radio->openWritingPipe(addresses[ROLE_RELAYTUNER]);
   if ( radio->write(&rreq, sizeof(relaytuner_request)) ) {
     tuner->status = REMOTE_STATUS_OK;
@@ -185,10 +195,13 @@ void handleRelayTuner(struct switch_preset* presets, RF24* radio, int selectedPr
     while (radio->available() ) {                    // If an ack with payload was received
 
       radio->read( &rres, sizeof( struct relaytuner_response));                  // Read it, and display the response time
-
+      //      if (rres.magic != TUNER_MAGIC_NUMBER) {
+      //        tuner->status = REMOTE_STATUS_COMM_ERROR;
+      //      } else {
       tuner->L = rres.series_l;
       tuner->shunt_C = rres.shunt_c;
       tuner->shunt_L = rres.shunt_l;
+      //      }
     }
   } else {
     tuner->status = REMOTE_STATUS_COMM_ERROR;

@@ -6,12 +6,14 @@
 #include <Arduino.h>
 #include <AltSoftSerial.h>
 
-extern AltSoftSerial altSerial;
+
 
 #define SOFTWARE_SERIAL_TX 2
 #define SOFTWARE_SERIAL_RX 3
 
 const char pgmLayout[] PROGMEM = "abcdTrq147ELtw2580Cye369NKiu";
+extern AltSoftSerial altSerial;
+extern struct switch_response sres;
 #include <SPI.h>
 #include <Wire.h>
 
@@ -83,7 +85,8 @@ struct tuner {
 
 struct antenna_switch_status {
   enum remote_module_status status;
-  int selected_antenna;
+  char selected_antenna;
+  char autoswitching;
 };
 
 struct switch_preset {
@@ -112,10 +115,10 @@ struct RadioInfo {
 };
 
 void handleTuner(struct switch_preset* presets, RF24* radio, int selectedPreset, char pressedKey);
-void handleSwitch(antenna_switch_status* ant_switch_status, RF24* radio, int selectedAntenna, char pressedKey, RadioInfo* radioInfo);
+void handleSwitch(antenna_switch_status* ant_switch_status, RF24* radio, int selectedAntenna, char pressedKey, RadioInfo* radioInfo, switch_response* psres);
 void handleRF(RFInfo* rfInfo);
-void handleRelayTuner(struct switch_preset* presets, RF24* radio, int selectedPreset, char pressedKey, char* encoderValue, RadioInfo* radioInfo);
-void handleLCD(LiquidCrystal* lcd, RFInfo* rfInfo, antenna_switch_status* ant_switch_status, switch_preset* preset, char pressedKey, RadioInfo* radioInfo);
+void handleRelayTuner(struct switch_preset* presets, RF24* radio, antenna_switch_status* ant_switch_status, char pressedKey, char* encoderValue, RadioInfo* radioInfo);
+void handleLCD(LiquidCrystal* lcd, RFInfo* rfInfo, antenna_switch_status* ant_switch_status, switch_preset* preset, char pressedKey, RadioInfo* radioInfo, switch_response* psres);
 void HandleSerial(RadioInfo* radioInfo);
 void configureRadio();
 #endif
