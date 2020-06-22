@@ -87,11 +87,13 @@ struct antenna_switch_status {
   enum remote_module_status status;
   char selected_antenna;
   char autoswitching;
+  char rxant;
 };
 
 struct switch_preset {
   const char* description;
   struct tuner* tuner;
+  
 };
 
 struct RFInfo {
@@ -112,6 +114,7 @@ struct RFInfo {
 struct RadioInfo {
   float Frequency;
   char Mode[4];
+  bool tx;
 };
 
 void handleTuner(struct switch_preset* presets, RF24* radio, int selectedPreset, char pressedKey);

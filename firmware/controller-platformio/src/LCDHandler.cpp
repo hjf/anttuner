@@ -43,14 +43,21 @@ void handleLCD(LiquidCrystal *lcd, RFInfo *rfInfo, antenna_switch_status *ant_sw
 
     else
     {
-      sprintf(screenbuf_p, "%d %s", ant_switch_status->selected_antenna + 1, wpreset->description);
+      if (ant_switch_status->rxant < 0)
+        sprintf(screenbuf_p, "%d %s   ", ant_switch_status->selected_antenna + 1, wpreset->description);
+      else
+        sprintf(screenbuf_p, "%d %s R%d",
+                ant_switch_status->selected_antenna + 1,
+                wpreset->description,
+                ant_switch_status->rxant + 1);
       screenbuf_p = screenbuf + strlen(screenbuf);
     }
 
-    sprintf(screenbuf_p, "F %5d.%02d %s      ",
+    sprintf(screenbuf_p, "F %5d.%02d %s    %s",
             (int)(radioInfo->Frequency / 1000.0),
             (int)(((long)(radioInfo->Frequency / 10.0)) % 100),
-            radioInfo->Mode);
+            radioInfo->Mode,
+            radioInfo->tx ? "TX" : "RX");
     screenbuf_p = screenbuf + strlen(screenbuf);
 
     //seccion Tuner

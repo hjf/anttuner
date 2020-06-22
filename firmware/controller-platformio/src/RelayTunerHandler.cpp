@@ -167,6 +167,11 @@ void handleRelayTuner(struct switch_preset* presets, RF24* radio, antenna_switch
       rreq.set_shunt_c =  0;
       rreq.set_series_l =  18;
     }
+    else if (radioInfo->Frequency < 7040000.0) {
+      rreq.set_shunt_l =  14;
+      rreq.set_shunt_c =  0;
+      rreq.set_series_l =  0;
+    }
     else if (radioInfo->Frequency < 7300000.0) {
       rreq.set_shunt_l =  0;
       rreq.set_shunt_c =  0;

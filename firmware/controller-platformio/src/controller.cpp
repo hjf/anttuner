@@ -58,6 +58,17 @@ public:
       ant_switch_status.autoswitching = !ant_switch_status.autoswitching;
       break;
 
+    case 'a':
+      if (ant_switch_status.rxant < 0)
+      {
+        ant_switch_status.rxant = 1;
+      }
+      else
+      {
+        ant_switch_status.rxant = -1;
+      }
+      break;
+
     default:
       return;
     }
@@ -162,23 +173,23 @@ void setup()
   tuner_relay.type = RELAY_TUNER;
 
   presets[0].tuner = &no_tuner;
-  presets[0].description = "YAGI 10-20M     ";
+  presets[0].description = "YAGI 10-20M  ";
 
   presets[1].tuner = &no_tuner;
-  presets[1].description = "                ";
+  presets[1].description = "MAGLOOP      ";
 
   presets[2].tuner = &tuner_relay;
-  presets[2].description = "VERTICAL        ";
+  presets[2].description = "VERTICAL     ";
 
   ant_switch_status.selected_antenna = -1;
   ant_switch_status.autoswitching = !0;
+  ant_switch_status.rxant = -1;
   selectedAntenna = -1;
   setupRotaryEncoderWithInterrupt(2, A3, onEncoderChange);
   switches.changeEncoderPrecision(100, 0);
   altSerial.begin(4800);
-  String mode=F("   ");
+  String mode = F("   ");
   mode.toCharArray(radioInfo.Mode, 4);
-  
 }
 
 void configureRadio()
